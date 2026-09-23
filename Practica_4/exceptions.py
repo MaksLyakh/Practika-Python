@@ -1,0 +1,2 @@
+class ComputerNotFoundError(Exception):
+    pass

@@ -1,0 +1,32 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: practica14-postgres
+    environment:
+      POSTGRES_USER: clinic14
+      POSTGRES_PASSWORD: clinic14
+      POSTGRES_DB: clinic14
+    ports:
+      - "127.0.0.1:5434:5432"
+    volumes:
+      - pg14_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U clinic14 -d clinic14"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+  redis:
+    image: redis:7-alpine
+    container_name: practica14-redis
+    ports:
+      - "127.0.0.1:6380:6379"
+    volumes:
+      - redis14_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+volumes:
+  pg14_data:
+  redis14_data:

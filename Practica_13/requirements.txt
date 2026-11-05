@@ -1,0 +1,5 @@
+pymongo>=4.10,<5
+redis>=5,<8
+pytest>=8,<10
+mongomock>=4.3,<5
+fakeredis>=2.30,<3

@@ -1,0 +1,5 @@
+Flask>=3.0,<4
+requests>=2.31,<3
+pytest>=8,<10
+redis>=5,<7
+pymongo>=4.6,<5

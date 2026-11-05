@@ -1,0 +1,524 @@
+openapi: 3.0.3
+
+info:
+  title: REST API медицинской клиники
+  description: API для управления записями пациентов на приём к врачу
+  version: 1.0.0
+
+servers:
+  - url: http://127.0.0.1:5000
+    description: Локальный сервер
+
+security:
+  - ApiKeyAuth: []
+    ClientVersion: []
+
+tags:
+  - name: Appointments
+    description: Управление записями на приём
+
+paths:
+  /appointments:
+    get:
+      tags: [Appointments]
+      summary: Получить список записей
+      description: Поддерживает фильтрацию, сортировку и пагинацию
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+        - name: sort_by
+          in: query
+          schema:
+            type: string
+            default: id
+        - name: order
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: asc
+        - name: patient
+          in: query
+          schema:
+            type: string
+        - name: doctor
+          in: query
+          schema:
+            type: string
+        - name: specialty
+          in: query
+          schema:
+            type: string
+        - name: date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: time
+          in: query
+          schema:
+            type: string
+        - name: room
+          in: query
+          schema:
+            type: integer
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum:
+              - запланирован
+              - подтверждён
+              - завершён
+              - отменён
+      responses:
+        '200':
+          description: Список записей с пагинацией
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAppointments'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      tags: [Appointments]
+      summary: Создать запись на приём
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppointmentInput'
+      responses:
+        '201':
+          description: Запись создана
+          headers:
+            Location:
+              description: Адрес созданной записи
+              schema:
+                type: string
+            ETag:
+              description: Контрольное значение записи
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /appointments/{appointment_id}:
+    parameters:
+      - name: appointment_id
+        in: path
+        required: true
+        description: Уникальный идентификатор записи
+        schema:
+          type: integer
+
+    get:
+      tags: [Appointments]
+      summary: Получить запись по ID
+      parameters:
+        - name: If-None-Match
+          in: header
+          description: ETag ранее полученной записи
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Запись найдена
+          headers:
+            ETag:
+              description: Контрольное значение записи
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentResponse'
+        '304':
+          description: Запись не изменилась
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Appointments]
+      summary: Полностью обновить запись
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppointmentInput'
+      responses:
+        '200':
+          description: Запись обновлена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+    patch:
+      tags: [Appointments]
+      summary: Частично обновить запись
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppointmentPatch'
+      responses:
+        '200':
+          description: Запись обновлена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+    delete:
+      tags: [Appointments]
+      summary: Удалить запись
+      responses:
+        '200':
+          description: Запись удалена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /appointments/search:
+    get:
+      tags: [Appointments]
+      summary: Поиск записей по имени пациента
+      parameters:
+        - name: patient
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Результаты поиска
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /appointments/available:
+    get:
+      tags: [Appointments]
+      summary: Получить запланированные приёмы
+      responses:
+        '200':
+          description: Список запланированных приёмов
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /appointments/stats:
+    get:
+      tags: [Appointments]
+      summary: Статистика записей по статусам
+      responses:
+        '200':
+          description: Статистика получена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatisticsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /appointments/doctor/{doctor}:
+    get:
+      tags: [Appointments]
+      summary: Получить записи врача
+      parameters:
+        - name: doctor
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Записи врача
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+    ClientVersion:
+      type: apiKey
+      in: header
+      name: X-Client-Version
+      description: Версия клиента, значение 1.0
+
+  schemas:
+    Appointment:
+      type: object
+      required:
+        - id
+        - patient
+        - doctor
+        - specialty
+        - date
+        - time
+        - room
+        - status
+      properties:
+        id:
+          type: integer
+          example: 1
+        patient:
+          type: string
+          example: Иван Петров
+        doctor:
+          type: string
+          example: Алексей Смирнов
+        specialty:
+          type: string
+          example: Терапевт
+        date:
+          type: string
+          format: date
+          example: '2026-11-10'
+        time:
+          type: string
+          example: '10:30'
+        room:
+          type: integer
+          example: 205
+        status:
+          type: string
+          enum:
+            - запланирован
+            - подтверждён
+            - завершён
+            - отменён
+
+    AppointmentInput:
+      type: object
+      required:
+        - patient
+        - doctor
+        - specialty
+        - date
+        - time
+        - room
+      properties:
+        patient:
+          type: string
+        doctor:
+          type: string
+        specialty:
+          type: string
+        date:
+          type: string
+          format: date
+        time:
+          type: string
+        room:
+          type: integer
+          minimum: 1
+        status:
+          type: string
+          default: запланирован
+          enum:
+            - запланирован
+            - подтверждён
+            - завершён
+            - отменён
+
+    AppointmentPatch:
+      type: object
+      description: Любое подмножество полей AppointmentInput
+      properties:
+        patient:
+          type: string
+        doctor:
+          type: string
+        specialty:
+          type: string
+        date:
+          type: string
+          format: date
+        time:
+          type: string
+        room:
+          type: integer
+          minimum: 1
+        status:
+          type: string
+          enum:
+            - запланирован
+            - подтверждён
+            - завершён
+            - отменён
+
+    AppointmentResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/Appointment'
+
+    AppointmentListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Appointment'
+
+    PaginatedAppointments:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Appointment'
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+
+    StatisticsResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: object
+          properties:
+            total:
+              type: integer
+            planned:
+              type: integer
+            confirmed:
+              type: integer
+            completed:
+              type: integer
+            cancelled:
+              type: integer
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: integer
+            message:
+              type: string
+
+  responses:
+    BadRequest:
+      description: Некорректные данные или параметры запроса
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Unauthorized:
+      description: Отсутствует или неверен API-ключ
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    NotFound:
+      description: Запись не найдена
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Conflict:
+      description: Конфликт записи на приём
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'

@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: practica16-postgres
+    environment:
+      POSTGRES_DB: clinic16
+      POSTGRES_USER: clinic16
+      POSTGRES_PASSWORD: clinic16
+    ports:
+      - '127.0.0.1:5436:5432'
+    volumes:
+      - clinic16_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U clinic16 -d clinic16']
+      interval: 5s
+      timeout: 3s
+      retries: 15
+volumes:
+  clinic16_data:

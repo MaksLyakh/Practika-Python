@@ -1,0 +1,1 @@
+{% extends 'base.html' %}{% block content %}<h1>{% if object %}Изменить приём{% else %}Новый приём{% endif %}</h1><form class="panel editor" method="post">{% csrf_token %}{{ form.as_p }}<button class="btn">Сохранить</button><a href="{% url 'appointment-list' %}">Отмена</a></form>{% endblock %}

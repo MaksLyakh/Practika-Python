@@ -1,0 +1,1 @@
+{% extends 'base.html' %}{% block content %}<h1>Удаление приёма</h1><form method="post" class="panel editor">{% csrf_token %}<p>Вы действительно хотите удалить запись «{{ object }}»?</p><button class="btn">Удалить</button><a href="{% url 'appointment-list' %}">Отмена</a></form>{% endblock %}
